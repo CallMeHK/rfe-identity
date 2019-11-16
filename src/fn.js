@@ -1,4 +1,5 @@
 const r = require('ramda')
+const Result = require('folktale/result')
 
 const tryCatchP = r.curry(async (_fn, _log, _obj) => {
   try {
@@ -8,6 +9,14 @@ const tryCatchP = r.curry(async (_fn, _log, _obj) => {
   }
 })
 
+const then = r.curry((f, p) => p.then(f))
+
+const log = x => {
+  console.log('logging: ', x)
+  return Result.Ok(x)
+}
+
 module.exports = {
-  tryCatchP
+  tryCatchP,
+  then
 }

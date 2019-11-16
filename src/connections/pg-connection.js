@@ -7,10 +7,23 @@ const { pool } = pg
 
 const pgConn = {
   runPgQueryNoPool: async (pgPool, pgQuery) => {
+    // query can be 'string' or 
+    // {
+    //  text: 'INSERT INTO users(name, email) VALUES($1, $2)',
+    //  values: ['brianc', 'brian.m.carlson@gmail.com'],
+    // }
     const result = await pgPool.query(pgQuery)
     // throw new Error('oops')
     return Result.Ok(result)
   },
+
+  queryTaskPNoPool: async (pgPool, pgQuery) => {
+    const result = await pgPool.query(pgQuery)
+    // throw new Error('oops')
+    return result
+  },
+
+  queryTaskP: async (pgQuery) => await pgConn.queryTaskPNoPool(pool, pgQuery),
 
   runPgQuery: async (pgQuery) => await pgConn.runPgQueryNoPool(pool, pgQuery),
 
@@ -23,6 +36,11 @@ const pgConn = {
     r.prop('rows', result) ? Result.Ok(r.prop('rows', result)) : Result.Error('No rows returned'),
 
   getOneResultFromQuery: (result) => Result.Ok(r.head(result)),
+
+  runQueryChain: async (queryString, formatterFn = pgConn.getResultFromQuery, catcherFn = pgConn.runPgError) => {
+    const result = await pgConn.tryPgQuery(queryString, catcherFn)
+    return result.chain(formatterFn)
+  },
 
   runQuery: async (queryString, formatterFn = pgConn.getResultFromQuery, catcherFn = pgConn.runPgError) => {
     const result = await pgConn.tryPgQuery(queryString, catcherFn)
