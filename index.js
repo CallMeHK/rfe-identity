@@ -14,5 +14,6 @@ app.get('/time', getRoutes.getTime)
 app.get('/users', getRoutes.getUsers)
 
 app.post('/user', postRoutes.getUser)
+app.post('/login', postRoutes.loginUser)
 
 app.listen(port, () => console.log(`Listening on port ${port}...`))
