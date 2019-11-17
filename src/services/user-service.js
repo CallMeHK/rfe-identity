@@ -1,5 +1,4 @@
 const pgConn = require('../connections/pg-connection')
-const { fromPromised } = require('folktale/concurrency/task');
 const r = require('ramda')
 
 const queries = {
@@ -8,17 +7,12 @@ const queries = {
 }
 
 const userService = {
-  getAllUsers: async () => await pgConn.runQuery(queries.getAllUsers),
+  getAllUsers: async () => await pgConn.query(queries.getAllUsers),
   getOneUser: r.curry(async (param, value) =>
-    await pgConn.runQueryChain({
+    await pgConn.query({
       text: queries.getOneUser(param),
       values: [value]
     })),
-  getOneUserTask: r.curry(async (param, value) =>
-    fromPromised(pgConn.queryTaskP)({
-      text: queries.getOneUser(param),
-      values: [value]
-    }))
 }
 
 module.exports = userService
