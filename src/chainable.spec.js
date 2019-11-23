@@ -1,4 +1,4 @@
-const {Chainable, AsyncAF, task} = require('./chainable')
+const { Chainable, AsyncAF, task } = require('./chainable')
 
 let C = Chainable
 
@@ -125,16 +125,141 @@ describe('chainable', () => {
       })
       expect(result).toBe('ok 3')
     })
+  })
 
-    it('can go from non promis to promise', async () => {
-      const result = logO(1) //.chain(promiseOk)
-      // .match({
-      //     ok: x => `ok ${x.value}`,
-      // error: x => `error ${x.value}`,
-      // })
-      expect(result).toBeTruthy()
+
+  describe('#check and #checkP', () => {
+    const checkTrue = () => true
+    const checkError = x => C.error(x + 1)
+    const checkTrueP = () => Promise.resolve(true)
+    const checkErrorP = x => Promise.resolve(C.error(x + 1))
+
+
+    it('doesnt break for check', () => {
+      const result = logO(1)
+        .check(checkTrue)
+        .match({
+          ok: x => `ok ${x.value}`,
+          error: x => `error ${x.value}`,
+        })
+
+      expect(result).toBe('ok 2')
+    })
+
+    it('breaks for error check', () => {
+      const result = logO(1)
+        .check(checkError)
+        .match({
+          ok: x => `ok ${x.value}`,
+          error: x => `error ${x.value}`,
+        })
+
+      expect(result).toBe('error 3')
+    })
+
+    it('keeps going after check', () => {
+      const result = logO(1)
+        .check(checkTrue)
+        .chain(logO)
+        .chain(logO)
+        .chain(logO)
+        .match({
+          ok: x => `ok ${x.value}`,
+          error: x => `error ${x.value}`,
+        })
+
+      expect(result).toBe('ok 5')
+    })
+
+    it('skips to end on error', () => {
+      const result = logO(1)
+        .check(checkError)
+        .chain(logO)
+        .chain(logO)
+        .chain(logO)
+        .match({
+          ok: x => `ok ${x.value}`,
+          error: x => `error ${x.value}`,
+        })
+
+      expect(result).toBe('error 3')
+    })
+
+    it('works for async', async () => {
+      const result = await logO(1)
+        .check(checkTrue)
+        .chainP(promiseOk)
+        .check(checkTrue)
+        .chainP(promiseOk)
+        .willMatch({
+          ok: x => `ok ${x.value}`,
+          error: x => `error ${x.value}`,
+        })
+
+      expect(result).toBe('ok 4')
+    })
+
+    it('errors properly for async', async () => {
+      const result = await logO(1)
+        .check(checkTrue)
+        .chainP(promiseOk)
+        .check(checkError)
+        .chainP(promiseOk)
+        .chainP(promiseOk)
+        .willMatch({
+          ok: x => `ok ${x.value}`,
+          error: x => `error ${x.value}`,
+        })
+
+      expect(result).toBe('error 4')
+    })
+
+    it('runs with checkP', async () => {
+      const result = await logO(1)
+        .chainP(promiseOk)
+        .checkP(checkTrueP)
+        .chainP(promiseOk)
+        .chainP(promiseOk)
+        .willMatch({
+          ok: x => `ok ${x.value}`,
+          error: x => `error ${x.value}`,
+        })
+
+      expect(result).toBe('ok 5')
+    })
+
+    it('stops on error with checkP', async () => {
+      const result = await logO(1)
+        .chainP(promiseOk)
+        .checkP(checkErrorP)
+        .chainP(promiseOk)
+        .chainP(promiseOk)
+        .willMatch({
+          ok: x => `ok ${x.value}`,
+          error: x => `error ${x.value}`,
+        })
+
+      expect(result).toBe('error 4')
+    })
+
+    it('checkP works in multiples', async () => {
+      const result = await logO(1)
+        .chainP(promiseOk)
+        .checkP(checkTrueP)
+        .checkP(checkTrueP)
+        .checkP(checkTrueP)
+        .chainP(promiseOk)
+        .checkP(checkTrueP)
+        .chainP(promiseOk)
+        .willMatch({
+          ok: x => `ok ${x.value}`,
+          error: x => `error ${x.value}`,
+        })
+
+      expect(result).toBe('ok 5')
     })
   })
+
   describe('asyncaf test', () => {
     const runAAF = () => {
       const AAF = new AsyncAF(Promise.resolve(1))
